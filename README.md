@@ -1,0 +1,1 @@
+An example Go project for learning the language
