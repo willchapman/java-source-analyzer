@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"io/fs"
+	"java-source-analyzer/expoters"
 	"log"
 	"os"
 	"path/filepath"
@@ -20,6 +21,10 @@ func handleError(err error) {
 
 // main is the program entry point
 func main() {
+	exporter, err := expoters.MakeExporter(expoters.TEXT)
+	handleError(err)
+
+	fmt.Println("Exporter: ", exporter.Name())
 
 	start := time.Now().UnixMilli()
 
@@ -33,42 +38,34 @@ func main() {
 	fullPath, _ := filepath.Abs(srcDirectory)
 	fmt.Printf("Analyzing %s...\n", fullPath)
 
-	fileCounter, dirCounter, javaFileCounter := 0, 0, 0
-	var lines uint32
-	var comments uint32
-	var allLines uint32
-	filepath.Walk("elasticsearch-master", func(path string, info fs.FileInfo, err error) error {
+	var dirData expoters.DirectoryAnalysisData
+
+	filepath.Walk(srcDirectory, func(path string, info fs.FileInfo, err error) error {
 		handleError(err)
-		if info.IsDir() {
-			dirCounter++
-		} else {
-			fileCounter++
+		if !info.IsDir() {
+			dirData.FileCounter++
 			if strings.HasSuffix(path, ".java") {
-				javaFileCounter++
-				thisFileLines, thisCommentLines, fileLines := processJavaFile(path)
-				lines += thisFileLines
-				comments += thisCommentLines
-				allLines += fileLines
+				dirData.JavaFileCount++
+				fileData := processJavaFile(path)
+				dirData.CodeLinesCount += fileData.CodeLinesCount
+				dirData.CommentLinesCount += fileData.CommentLinesCount
+				dirData.AllLinesCount += fileData.AllLinesCount
 			}
 		}
 		return nil
 	})
 
-	fmt.Println("Files\n\t", fileCounter)
-	fmt.Println("Java Source Files\n\t", javaFileCounter)
-	fmt.Println("Lines\n\t", lines, " ", fmt.Sprintf("( %.2f%% )", (float32(lines)/float32(allLines))*100))
-	fmt.Println("Comments\n\t", comments, " ", fmt.Sprintf("( %.2f%% )", (float32(comments)/float32(allLines))*100))
-	fmt.Println("All Lines\n\t", allLines)
+	exporter.DoExport(dirData)
 
 	duration := float64(time.Now().UnixMilli()-start) / 1000
-	fmt.Printf("Scan took %.1f seconds", duration)
+	fmt.Printf("\nScan took %.1f seconds", duration)
 
 }
 
 // processJavaFile is a method that analyzes a source file and counts and returns the
 // number of java source code lines, number of comments and the total number of non-empty
 // lines.
-func processJavaFile(path string) (uint32, uint32, uint32) {
+func processJavaFile(path string) expoters.FileAnalysisData {
 
 	file, err := os.Open(path)
 	if err != nil {
@@ -120,5 +117,5 @@ func processJavaFile(path string) (uint32, uint32, uint32) {
 		log.Fatal(err)
 	}
 
-	return lines, commentLines, allLines
+	return expoters.FileAnalysisData{CodeLinesCount: lines, CommentLinesCount: commentLines, AllLinesCount: allLines}
 }

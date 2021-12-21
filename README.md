@@ -10,7 +10,7 @@ number of comment lines and print the result.
 Assuming go is installed and working, typing the below will
 build the executable
 ```shell
-go build -o java-source-analyzer.exe .\main.go
+go build
 ```
 
 ## Feedback
