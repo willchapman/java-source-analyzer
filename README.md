@@ -13,6 +13,9 @@ build the executable
 go build
 ```
 
+## Running
+
+
 ## Feedback
 Although unlikely, if anyone would like to submit some PRs with some
 improvements, for learning, it would be greatly appreciated.

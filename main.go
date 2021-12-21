@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	flag "flag"
 	"fmt"
 	"io/fs"
 	"java-source-analyzer/expoters"
@@ -9,7 +10,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 )
 
 // handleError is a generic error handler
@@ -21,26 +21,44 @@ func handleError(err error) {
 
 // main is the program entry point
 func main() {
-	exporter, err := expoters.MakeExporter(expoters.TEXT)
-	handleError(err)
+	var outputType string
+	flag.StringVar(&outputType, "output", "TEXT", "Chooses the output format (JSON,TEXT)")
+	flag.Parse()
 
-	fmt.Println("Exporter: ", exporter.Name())
+	var exportType expoters.ExportDestinationType
+	switch outputType {
 
-	start := time.Now().UnixMilli()
+	case "JSON":
+		exportType = expoters.JSON
+		break
 
-	var srcDirectory string
-	if len(os.Args) > 1 {
-		srcDirectory = os.Args[1]
-	} else {
-		srcDirectory = "."
+	default:
+		exportType = expoters.TEXT
+		break
+
 	}
 
-	fullPath, _ := filepath.Abs(srcDirectory)
-	fmt.Printf("Analyzing %s...\n", fullPath)
+	exporter, err := expoters.MakeExporter(exportType)
+	handleError(err)
+
+	//start := time.Now().UnixMilli()
+
+	var srcDirectory string
+	if len(flag.Args()) == 0 {
+		fmt.Println("Usage: " + os.Args[0] + ": <options> source-directory")
+		fmt.Println(" Options are listed below")
+		flag.PrintDefaults()
+		return
+	} else {
+		srcDirectory = flag.Arg(0)
+	}
+
+	//fullPath, _ := filepath.Abs(srcDirectory)
+	//fmt.Printf("Analyzing %s...\n", fullPath)
 
 	var dirData expoters.DirectoryAnalysisData
 
-	filepath.Walk(srcDirectory, func(path string, info fs.FileInfo, err error) error {
+	err = filepath.Walk(srcDirectory, func(path string, info fs.FileInfo, err error) error {
 		handleError(err)
 		if !info.IsDir() {
 			dirData.FileCounter++
@@ -54,11 +72,13 @@ func main() {
 		}
 		return nil
 	})
+	handleError(err)
 
-	exporter.DoExport(dirData)
+	err = exporter.DoExport(dirData)
+	handleError(err)
 
-	duration := float64(time.Now().UnixMilli()-start) / 1000
-	fmt.Printf("\nScan took %.1f seconds", duration)
+	//duration := float64(time.Now().UnixMilli()-start) / 1000
+	//fmt.Printf("\nScan took %.1f seconds", duration)
 
 }
 
