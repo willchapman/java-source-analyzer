@@ -5,7 +5,7 @@ import (
 	flag "flag"
 	"fmt"
 	"io/fs"
-	"java-source-analyzer/expoters"
+	"java-source-analyzer/exporters"
 	"log"
 	"os"
 	"path/filepath"
@@ -25,20 +25,20 @@ func main() {
 	flag.StringVar(&outputType, "output", "TEXT", "Chooses the output format (JSON,TEXT)")
 	flag.Parse()
 
-	var exportType expoters.ExportDestinationType
+	var exportType exporters.ExportDestinationType
 	switch outputType {
 
 	case "JSON":
-		exportType = expoters.JSON
+		exportType = exporters.JSON
 		break
 
 	default:
-		exportType = expoters.TEXT
+		exportType = exporters.TEXT
 		break
 
 	}
 
-	exporter, err := expoters.MakeExporter(exportType)
+	exporter, err := exporters.MakeExporter(exportType)
 	handleError(err)
 
 	//start := time.Now().UnixMilli()
@@ -56,7 +56,7 @@ func main() {
 	//fullPath, _ := filepath.Abs(srcDirectory)
 	//fmt.Printf("Analyzing %s...\n", fullPath)
 
-	var dirData expoters.DirectoryAnalysisData
+	var dirData exporters.DirectoryAnalysisData
 
 	err = filepath.Walk(srcDirectory, func(path string, info fs.FileInfo, err error) error {
 		handleError(err)
@@ -85,7 +85,7 @@ func main() {
 // processJavaFile is a method that analyzes a source file and counts and returns the
 // number of java source code lines, number of comments and the total number of non-empty
 // lines.
-func processJavaFile(path string) expoters.FileAnalysisData {
+func processJavaFile(path string) exporters.FileAnalysisData {
 
 	file, err := os.Open(path)
 	if err != nil {
@@ -137,5 +137,5 @@ func processJavaFile(path string) expoters.FileAnalysisData {
 		log.Fatal(err)
 	}
 
-	return expoters.FileAnalysisData{CodeLinesCount: lines, CommentLinesCount: commentLines, AllLinesCount: allLines}
+	return exporters.FileAnalysisData{CodeLinesCount: lines, CommentLinesCount: commentLines, AllLinesCount: allLines}
 }
