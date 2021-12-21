@@ -14,7 +14,15 @@ go build
 ```
 
 ## Running
+Once built, the only required parameter is the directory to scan. Below is the usage
+documentation.
+```shell
+java-source-analyzer.exe: <options> source-directory
+ Options are listed below                                     
+  -output string                                              
+        Chooses the output format (JSON,TEXT) (default "TEXT")
 
+```
 
 ## Feedback
 Although unlikely, if anyone would like to submit some PRs with some
